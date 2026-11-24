@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador do RU · UFOPA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <img id="brasao" src="brasao.png" alt="Brasão da UFOPA" onerror="this.style.display='none'">
+  <button id="bIni" class="b verde">Iniciar Simulação</button>
+  <button id="bPau" class="b ouro">Pausar Simulação</button>
+  <button id="bAva" class="b azul">Avançar Simulação</button>
+  <button id="bEnc" class="b verm">Encerrar Simulação</button>
+</header>
+
+<main>
+  <div class="hero">
+    <div>
+      <p class="mono">UFOPA / Restaurante Universitário</p>
+      <h1>O almoço, em movimento.</h1>
+      <p>Simule chegadas, provoque falhas e compare o efeito nas filas.</p>
+    </div>
+    <div class="hero-r"><span id="status" class="tag lil">Vazio</span><span id="repinfo" class="mono">Réplica ao vivo: 1</span></div>
+  </div>
+
+  <h2>01 / Parâmetros</h2>
+  <section class="card pad grid-par" id="params">
+    <label>Réplicas<input id="inRep" type="number" min="2" max="2000" value="500"></label>
+    <label>Semente<input id="inSem" type="number" value="42"></label>
+    <div>Perfil de chegadas<div class="seg" data-g="perfil"><button data-v="gilbert" class="on">Gilbert</button><button data-v="janelas">Janelas</button></div></div>
+    <div>Serviço de A<div class="seg" data-g="servA"><button data-v="observado" class="on">Observado</button><button data-v="igual-b">Igual a B</button></div></div>
+    <div>Cenário<div class="seg" data-g="cen"><button data-v="ambos" class="on">Ambos abertos</button><button data-v="A">Fecha A</button><button data-v="B">Fecha B</button></div></div>
+    <div>Velocidade<div class="seg" data-g="vel"><button data-v="1">1x</button><button data-v="2" class="on">2x</button><button data-v="5">5x</button></div></div>
+    <p class="note" id="lockNote">Parâmetros ficam bloqueados durante a execução. Encerre para reconfigurar.</p>
+  </section>
+
+  <section class="card pad clock">
+    <div><span class="mono">Tempo simulado</span><div id="relogio" class="big">11h51</div><span id="minInfo" class="mono">0 de 60 min</span></div>
+    <div class="barwrap"><div class="bar"><i id="barFill"></i><u id="barRup"></u></div>
+      <div class="barlab"><span>11h51</span><span id="rupLab">12h37 / ruptura</span><span>12h51</span></div></div>
+  </section>
+
+  <div class="rowhead"><h2>02 / O RU agora</h2>
+    <div><span id="phC" class="tag verde">Calma</span> <span id="phP" class="tag coral">Pico</span> <span id="phX" class="tag lil" hidden></span></div></div>
+  <section class="card pad stage">
+    <div class="cheg"><span class="mono">Chegadas</span><div id="chegN" class="big">0</div><span class="mono">alunos chegaram</span>
+      <span class="mono">Próximo</span><div id="proxId" class="chip lil">3</div></div>
+    <div class="filas">
+      <div><b>A</b> <span id="nA" class="tag lil">0 na fila</span><div id="qA" class="fila"></div></div>
+      <div id="migBox" class="mig" hidden><span id="migTxt">A ↓ B → 0 migrados</span></div>
+      <div><b>B</b> <span id="nB" class="tag verdeC">0 na fila</span><div id="qB" class="fila"></div></div>
+      <span class="mono">fim da fila ← … primeiro a entrar →</span>
+    </div>
+    <div class="atend">
+      <div id="atA" class="at"><span class="mono">Atendente A</span><strong>Preparo</strong><small>–</small></div>
+      <div id="atB" class="at"><span class="mono">Atendente B</span><strong>Preparo</strong><small>–</small></div>
+    </div>
+  </section>
+  <div class="falha"><span class="mono">Injetar falha</span>
+    <button id="fcA" class="b verm" disabled>Fechar A</button><button id="fcB" class="b coral" disabled>Fechar B</button>
+    <span id="falhaMsg" class="note">Inicie a simulação para injetar falhas.</span></div>
+
+  <h2>03 / Indicadores da réplica</h2>
+  <section class="kpis" id="kpis"></section>
+
+  <h2>04 / Pessoas no sistema</h2>
+  <section class="card pad"><span class="mono">N(t) / alunos · réplica atual</span><canvas id="chart" height="300"></canvas>
+    <p class="note">Faixa P5–P95 ainda não implementada. Valores calculados pelo motor (engine.js).</p></section>
+
+  <div class="tabs"><button id="tabSim" class="on">Simulação</button><button id="tabRes">Resultados</button></div>
+  <section id="resBox" hidden>
+    <div class="card pad resbar">
+      <button id="bRodar" class="b roxo">Rodar réplicas</button>
+      <div class="prog"><i id="progFill"></i></div><span id="progTxt" class="mono">Aguardando</span>
+    </div>
+    <div class="card"><table id="tbl"><thead><tr><th>Cenário</th><th>W (s)</th><th>Wq (s)</th><th>L</th><th>Saídas</th><th>Saldo final</th></tr></thead><tbody></tbody></table></div>
+    <div class="duo">
+      <div class="card pad lilbg" id="deltaBox"><span class="mono">ΔW · Fecha A − Ambos</span><div class="big">–</div></div>
+      <div class="card pad" id="vsBox"><div class="rowhead"><h3>Simulado × Reconstruído</h3><span class="tag ouro">Validação parcial</span></div>
+        <table class="mini"><thead><tr><th>Base: Fecha A</th><th>Simulado</th><th>Reconstruído</th><th>Diferença</th></tr></thead><tbody></tbody></table>
+        <p class="note">Parâmetros calibrados na própria coleta; não é validação independente.</p></div>
+    </div>
+  </section>
+
+  <h2>05 / Estados da interface</h2>
+  <section class="estados" id="estados">
+    <div data-e="vazio" class="card pad lilbg"><span class="mono">Vazio</span><p>Filas vazias. Atendentes em Preparo. Pronto para iniciar.</p></div>
+    <div data-e="rodando" class="card pad verdebg"><span class="mono">Rodando</span><p>Eventos em tempo real. Falhas liberadas.</p></div>
+    <div data-e="pausado" class="card pad ourobg"><span class="mono">Pausado</span><p>Tempo congelado. Retome em Iniciar.</p></div>
+    <div data-e="concluido" class="card pad verdeC"><span class="mono">Concluído</span><p>Hora encerrada. Exportação liberada.</p></div>
+  </section>
+</main>
+
+<footer>
+  <div><b>Simulador do RU / UFOPA</b><br><small>Carlos Rabelo · Jullian Gemaque · Lorena Neves · Maria de Fátima · Rayssa Simões</small></div>
+  <button id="bExp" class="b roxo">Exportar JSON ↓</button>
+</footer>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
